@@ -13,6 +13,7 @@ app.http("plan", {
     const ingredients = String(body.ingredients || "").slice(0, 1500);
     const diet = String(body.diet || "No restriction").slice(0, 40);
     const cuisine = String(body.cuisine || "Anything goes").slice(0, 40);
+    const avoid = String(body.avoid || "").slice(0, 200);
     const meals = ["1", "2", "3"].includes(String(body.meals)) ? String(body.meals) : "3";
     if (!ingredients.trim()) return { status: 400, jsonBody: { error: "No ingredients" } };
 
@@ -21,7 +22,8 @@ app.http("plan", {
       "Ingredients on hand: " + ingredients,
       "Diet: " + diet + ". Cuisine leaning: " + cuisine + ". Meals per day: " + meals + " (3 = breakfast, lunch, dinner; 2 = lunch and dinner; 1 = dinner only).",
       "Rules: vary the dishes across days, do not repeat a main dish, assume basic pantry staples (salt, oil, water, common spices) are available, and respect the diet strictly.",
-            "Breakfast rule: every Breakfast must be either a smoothie or a pudding (for example chia pudding, oats pudding, rice pudding), never a savoury dish. Alternate between smoothies and puddings and never repeat the same one. If the pantry lacks what they need, add the missing items to the shopping list.",
+      "Breakfast rule: every Breakfast must be either a smoothie or a pudding (for example chia pudding, oats pudding, rice pudding), never a savoury dish. Alternate between smoothies and puddings and never repeat the same one. If the pantry lacks what they need, add the missing items to the shopping list.",
+      "Diet meanings: Vegetarian = only plant-based food (vegetables, leafy greens, roots, fruits, grains, pulses, nuts) plus dairy; no meat, poultry, fish, seafood or eggs. Eggetarian = vegetarian food with eggs as a prominent protein in many meals; no meat, poultry, fish or seafood. Non-vegetarian = meat, poultry, seafood, pork, beef, ham, sausages and every other non-vegetarian food is allowed, along with vegetarian food. Vegan = no animal products at all (no meat, fish, eggs, dairy or honey).",
       "Keep each tip under 12 words. In 'shopping' list at most 6 inexpensive extras that would unlock the plan; use an empty array if none are needed.",
       'Respond with ONLY JSON in this shape: {"days":[{"day":"Day 1","meals":[{"type":"Breakfast","dish":"...","uses":"comma separated ingredients from the list","tip":"..."}]}],"shopping":["..."]}. Exactly 5 days.'
     ].join("\n");
