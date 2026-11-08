@@ -4,7 +4,7 @@ app.http("plan", {
   methods: ["POST"],
   authLevel: "anonymous",
   handler: async (request, context) => {
-    const key = process.env.ANTHROPIC_API_KEY;
+    const key = process.env.GEMINI_API_KEY;
     if (!key) return { status: 500, jsonBody: { error: "Missing API key setting" } };
 
     let body;
@@ -25,15 +25,19 @@ app.http("plan", {
       'Respond with ONLY JSON in this shape: {"days":[{"day":"Day 1","meals":[{"type":"Breakfast","dish":"...","uses":"comma separated ingredients from the list","tip":"..."}]}],"shopping":["..."]}. Exactly 5 days.'
     ].join("\n");
 
-    const r = await fetch("https://api.anthropic.com/v1/messages", {
+    const r = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent", {
       method: "POST",
-      headers: { "content-type": "application/json", "x-api-key": key, "anthropic-version": "2023-06-01" },
-      body: JSON.stringify({ model: "claude-sonnet-5-5", max_tokens: 2500, messages: [{ role: "user", content: prompt }] })
+      headers: { "content-type": "application/json", "x-goog-api-key": key },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: { responseMimeType: "application/json" }
+      })
     });
     if (!r.ok) { context.error(await r.text()); return { status: 502, jsonBody: { error: "Upstream error" } }; }
 
     const data = await r.json();
-    const text = (data.content || []).filter(b => b.type === "text").map(b => b.text).join("");
+    const parts = (data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts) || [];
+    const text = parts.map(p => p.text || "").join("");
     const clean = text.replace(/```json|```/g, "").trim();
     try { return { jsonBody: JSON.parse(clean) }; }
     catch { return { status: 502, jsonBody: { error: "Could not parse plan" } }; }
