@@ -40,6 +40,6 @@ app.http("plan", {
     const text = parts.map(p => p.text || "").join("");
     const clean = text.replace(/```json|```/g, "").trim();
     try { return { jsonBody: JSON.parse(clean) }; }
-    catch { return { status: 502, jsonBody: { error: "Could not parse plan" } }; }
+        catch { return { status: 502, jsonBody: { error: "Could not parse plan", detail: text.slice(0, 300) } }; }
   }
 });
