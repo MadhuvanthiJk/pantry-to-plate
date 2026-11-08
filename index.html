@@ -17,7 +17,7 @@ h1{font-size:1.9rem;margin:0 0 4px}
 .sub{color:var(--muted);margin:0 0 20px;font-style:italic}
 .panel{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px}
 label{display:block;font-weight:bold;margin:0 0 6px;font-size:.95rem}
-textarea,select{width:100%;font:inherit;color:var(--ink);background:var(--soft);border:1px solid var(--line);border-radius:10px;padding:10px}
+textarea,select,input{width:100%;font:inherit;color:var(--ink);background:var(--soft);border:1px solid var(--line);border-radius:10px;padding:10px}
 textarea{min-height:110px;resize:vertical}
 .row{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-top:14px}
 button{font:inherit;font-weight:bold;cursor:pointer;border:0;border-radius:10px;padding:12px 18px;background:var(--accent);color:var(--accent-ink);margin-top:16px;width:100%}
@@ -46,9 +46,12 @@ button.ghost{background:var(--soft);color:var(--ink);border:1px solid var(--line
 <div class="panel">
 <label for="ing">What is in your kitchen?</label>
 <textarea id="ing" placeholder="rice, toor dal, onions, tomatoes, potatoes, eggs, curd, spinach, paneer, atta, chilli, curry leaves"></textarea>
+<label for="avoid" style="margin-top:14px">Anything to avoid?</label>
+<input id="avoid" type="text" maxlength="200" placeholder="e.g. peanuts, mushrooms, no dairy">
+<div class="note" style="margin-top:6px">If you have a serious allergy, please double-check every ingredient yourself. An AI can slip up.</div>
 <div class="row">
 <div><label for="diet">Diet</label>
-<select id="diet"><option>No restriction</option><option>Vegetarian</option><option>Eggetarian</option><option>Vegan</option></select></div>
+<select id="diet"><option>Non-vegetarian</option><option>Vegetarian</option><option>Eggetarian</option><option>Vegan</option></select></div>
 <div><label for="cuisine">Cuisine leaning</label>
 <select id="cuisine"><option>Anything goes</option><option>South Indian</option><option>North Indian</option><option>Light and healthy</option><option>Quick, under 30 minutes</option></select></div>
 <div><label for="meals">Meals per day</label>
@@ -117,7 +120,7 @@ btn.onclick = async () => {
     const res = await fetch("/api/plan", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ingredients, diet: $("diet").value, cuisine: $("cuisine").value, meals: $("meals").value })
+      body: JSON.stringify({ ingredients, diet: $("diet").value, avoid: $("avoid").value, cuisine: $("cuisine").value, meals: $("meals").value })
     });
     if (!res.ok) throw new Error("http " + res.status);
     const plan = await res.json();
