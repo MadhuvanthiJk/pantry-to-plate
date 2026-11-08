@@ -33,7 +33,7 @@ app.http("plan", {
         generationConfig: { responseMimeType: "application/json" }
       })
     });
-    if (!r.ok) { context.error(await r.text()); return { status: 502, jsonBody: { error: "Upstream error" } }; }
+        if (!r.ok) { const detail = (await r.text()).slice(0, 400); context.error(detail); return { status: 502, jsonBody: { error: "Upstream error", detail } }; }
 
     const data = await r.json();
     const parts = (data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts) || [];
