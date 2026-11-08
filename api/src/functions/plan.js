@@ -30,7 +30,7 @@ app.http("plan", {
       headers: { "content-type": "application/json", "x-goog-api-key": key },
       body: JSON.stringify({
         contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: { responseMimeType: "application/json" }
+        generationConfig: { responseMimeType: "application/json", thinkingConfig: { thinkingLevel: "low" } }
       })
     });
         if (!r.ok) { const detail = (await r.text()).slice(0, 400); context.error(detail); return { status: 502, jsonBody: { error: "Upstream error", detail } }; }
