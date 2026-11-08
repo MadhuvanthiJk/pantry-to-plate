@@ -25,21 +25,34 @@ app.http("plan", {
       'Respond with ONLY JSON in this shape: {"days":[{"day":"Day 1","meals":[{"type":"Breakfast","dish":"...","uses":"comma separated ingredients from the list","tip":"..."}]}],"shopping":["..."]}. Exactly 5 days.'
     ].join("\n");
 
-      const r = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent", {
-      method: "POST",
-      headers: { "content-type": "application/json", "x-goog-api-key": key },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: { responseMimeType: "application/json", thinkingConfig: { thinkingLevel: "low" } }
-      })
-    });
-        if (!r.ok) { const detail = (await r.text()).slice(0, 400); context.error(detail); return { status: 502, jsonBody: { error: "Upstream error", detail } }; }
+    const started = Date.now();
+    let r;
+    try {
+      r = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent", {
+        method: "POST",
+        headers: { "content-type": "application/json", "x-goog-api-key": key },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: { responseMimeType: "application/json", thinkingConfig: { thinkingLevel: "low" } }
+        }),
+        signal: AbortSignal.timeout(30000)
+      });
+    } catch (e) {
+      const msg = String((e && e.message) || e).slice(0, 300);
+      return { status: 504, jsonBody: { error: "No answer from Google in time", detail: msg, ms: Date.now() - started } };
+    }
+
+    if (!r.ok) {
+      const detail = (await r.text()).slice(0, 400);
+      context.error(detail);
+      return { status: 502, jsonBody: { error: "Upstream error", detail, ms: Date.now() - started } };
+    }
 
     const data = await r.json();
     const parts = (data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts) || [];
     const text = parts.map(p => p.text || "").join("");
     const clean = text.replace(/```json|```/g, "").trim();
     try { return { jsonBody: JSON.parse(clean) }; }
-        catch { return { status: 502, jsonBody: { error: "Could not parse plan", detail: text.slice(0, 300) } }; }
+    catch { return { status: 502, jsonBody: { error: "Could not parse plan", detail: text.slice(0, 300), ms: Date.now() - started } }; }
   }
 });
