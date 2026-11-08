@@ -25,27 +25,41 @@ app.http("plan", {
       'Respond with ONLY JSON in this shape: {"days":[{"day":"Day 1","meals":[{"type":"Breakfast","dish":"...","uses":"comma separated ingredients from the list","tip":"..."}]}],"shopping":["..."]}. Exactly 5 days.'
     ].join("\n");
 
+    const models = ["gemini-3.8-flash", "gemini-3.1-flash-lite-preview"];
     const started = Date.now();
-    let r;
-    try {
-      r = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent", {
-        method: "POST",
-        headers: { "content-type": "application/json", "x-goog-api-key": key },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: { responseMimeType: "application/json", thinkingConfig: { thinkingLevel: "low" } }
-        }),
-        signal: AbortSignal.timeout(30000)
-      });
-    } catch (e) {
-      const msg = String((e && e.message) || e).slice(0, 300);
-      return { status: 504, jsonBody: { error: "No answer from Google in time", detail: msg, ms: Date.now() - started } };
+    let r = null;
+    let lastDetail = "";
+    let lastStatus = 0;
+
+    for (let i = 0; i < 4; i++) {
+      if (Date.now() - started > 25000) break;
+      const model = models[i % models.length];
+      try {
+        r = await fetch("https://generativelanguage.googleapis.com/v1beta/models/" + model + ":generateContent", {
+          method: "POST",
+          headers: { "content-type": "application/json", "x-goog-api-key": key },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: prompt }] }],
+            generationConfig: { responseMimeType: "application/json", thinkingConfig: { thinkingLevel: "low" } }
+          }),
+          signal: AbortSignal.timeout(Math.max(3000, 30000 - (Date.now() - started)))
+        });
+      } catch (e) {
+        lastDetail = model + ": " + String((e && e.message) || e).slice(0, 300);
+        lastStatus = 504;
+        r = null;
+        continue;
+      }
+      if (r.ok) break;
+      lastStatus = r.status;
+      lastDetail = model + ": " + (await r.text()).slice(0, 400);
+      context.error(lastDetail);
+      if (![429, 500, 503, 504].includes(r.status) && r.status !== 404) break;
+      await new Promise(res => setTimeout(res, 1500));
     }
 
-    if (!r.ok) {
-      const detail = (await r.text()).slice(0, 400);
-      context.error(detail);
-      return { status: 502, jsonBody: { error: "Upstream error", detail, ms: Date.now() - started } };
+    if (!r || !r.ok) {
+      return { status: 502, jsonBody: { error: "Upstream error", status: lastStatus, detail: lastDetail, ms: Date.now() - started } };
     }
 
     const data = await r.json();
