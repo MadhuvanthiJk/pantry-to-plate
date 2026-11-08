@@ -21,18 +21,20 @@ app.http("plan", {
       "Ingredients on hand: " + ingredients,
       "Diet: " + diet + ". Cuisine leaning: " + cuisine + ". Meals per day: " + meals + " (3 = breakfast, lunch, dinner; 2 = lunch and dinner; 1 = dinner only).",
       "Rules: vary the dishes across days, do not repeat a main dish, assume basic pantry staples (salt, oil, water, common spices) are available, and respect the diet strictly.",
-      "Keep each tip to one short, useful sentence. In 'shopping' list at most 6 inexpensive extras that would unlock the plan; use an empty array if none are needed.",
+      "Keep each tip under 12 words. In 'shopping' list at most 6 inexpensive extras that would unlock the plan; use an empty array if none are needed.",
       'Respond with ONLY JSON in this shape: {"days":[{"day":"Day 1","meals":[{"type":"Breakfast","dish":"...","uses":"comma separated ingredients from the list","tip":"..."}]}],"shopping":["..."]}. Exactly 5 days.'
     ].join("\n");
 
-    const models = ["gemini-3.8-flash", "gemini-3.1-flash-lite-preview"];
+    const models = ["gemini-3.1-flash-lite-preview", "gemini-3.8-flash"];
     const started = Date.now();
+    const deadline = started + 38000;
+    const tried = [];
     let r = null;
     let lastDetail = "";
-    let lastStatus = 0;
 
     for (let i = 0; i < 4; i++) {
-      if (Date.now() - started > 25000) break;
+      const left = deadline - Date.now();
+      if (left < 4000) break;
       const model = models[i % models.length];
       try {
         r = await fetch("https://generativelanguage.googleapis.com/v1beta/models/" + model + ":generateContent", {
@@ -42,24 +44,26 @@ app.http("plan", {
             contents: [{ parts: [{ text: prompt }] }],
             generationConfig: { responseMimeType: "application/json", thinkingConfig: { thinkingLevel: "low" } }
           }),
-          signal: AbortSignal.timeout(Math.max(3000, 30000 - (Date.now() - started)))
+          signal: AbortSignal.timeout(Math.min(14000, left))
         });
       } catch (e) {
-        lastDetail = model + ": " + String((e && e.message) || e).slice(0, 300);
-        lastStatus = 504;
+        tried.push(model + ": timeout");
+        lastDetail = String((e && e.message) || e).slice(0, 200);
         r = null;
         continue;
       }
       if (r.ok) break;
-      lastStatus = r.status;
-      lastDetail = model + ": " + (await r.text()).slice(0, 400);
-      context.error(lastDetail);
-      if (![429, 500, 503, 504].includes(r.status) && r.status !== 404) break;
-      await new Promise(res => setTimeout(res, 1500));
+      const t = (await r.text()).slice(0, 300);
+      tried.push(model + ": " + r.status);
+      lastDetail = t;
+      context.error(model + " " + r.status + " " + t);
+      const retryable = [404, 429, 500, 503, 504].includes(r.status);
+      if (!retryable) break;
+      await new Promise(res => setTimeout(res, 1000));
     }
 
     if (!r || !r.ok) {
-      return { status: 502, jsonBody: { error: "Upstream error", status: lastStatus, detail: lastDetail, ms: Date.now() - started } };
+      return { status: 502, jsonBody: { error: "Upstream error", tried, detail: lastDetail, ms: Date.now() - started } };
     }
 
     const data = await r.json();
