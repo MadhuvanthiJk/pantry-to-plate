@@ -98,6 +98,7 @@ function render(plan) {
       box.append(el("div", "name", m.dish));
       if (m.uses) box.append(el("div", "note", "Uses: " + m.uses));
       if (m.tip) box.append(el("div", "note", m.tip));
+      if (m.benefit) box.append(el("div", "note", "Benefit: " + m.benefit));
       day.append(box);
     });
     out.append(day);
