@@ -1,5 +1,9 @@
 const { app } = require("@azure/functions");
 
+// EDIT THIS LIST: your own staples (always at home), separated by commas.
+// The planner will use only these plus the fresh ingredients typed on the page.
+const STAPLES = "salt, olive oil, sesame oil, coconut oil, groundnut oil, cumin powder, kasuri methi, white sesame seeds, cornflour, chilli flakes, mixed herbs, dried red chillies, turmeric, red chilli powder, coriander powder, cumin seeds, mustard seeds, black pepper, ginger-garlic paste, chilli oil, milk, butter, cheese, tamarind, wheat flour, ghee, garam masala";
+
 app.http("plan", {
   methods: ["POST"],
   authLevel: "anonymous",
@@ -11,21 +15,27 @@ app.http("plan", {
     try { body = await request.json(); } catch { return { status: 400, jsonBody: { error: "Bad request" } }; }
 
     const ingredients = String(body.ingredients || "").slice(0, 1500);
-    const diet = String(body.diet || "No restriction").slice(0, 40);
-    const cuisine = String(body.cuisine || "Anything goes").slice(0, 40);
     const avoid = String(body.avoid || "").slice(0, 200);
+    const diet = String(body.diet || "Non-vegetarian").slice(0, 40);
+    const cuisine = String(body.cuisine || "Anything goes").slice(0, 40);
     const meals = ["1", "2", "3"].includes(String(body.meals)) ? String(body.meals) : "3";
     if (!ingredients.trim()) return { status: 400, jsonBody: { error: "No ingredients" } };
 
     const prompt = [
-      "You are a practical home-cooking meal planner. Build a 5-day meal plan using mainly the ingredients the person has.",
-      "Ingredients on hand: " + ingredients,
+      "You are a practical home-cooking meal planner. Build a 5-day meal plan around the fresh ingredients the person has.",
+      "Fresh ingredients on hand (build the meals around these): " + ingredients,
       "Diet: " + diet + ". Cuisine leaning: " + cuisine + ". Meals per day: " + meals + " (3 = breakfast, lunch, dinner; 2 = lunch and dinner; 1 = dinner only).",
-      "Rules: vary the dishes across days, do not repeat a main dish, assume basic pantry staples (salt, oil, water, common spices) are available, and respect the diet strictly.",
-      "Breakfast rule: every Breakfast must be either a smoothie or a pudding (for example chia pudding, oats pudding, rice pudding), never a savoury dish. Alternate between smoothies and puddings and never repeat the same one. If the pantry lacks what they need, add the missing items to the shopping list.",
-      "Diet meanings: Vegetarian = only plant-based food (vegetables, leafy greens, roots, fruits, grains, pulses, nuts) plus dairy; no meat, poultry, fish, seafood or eggs. Eggetarian = vegetarian food with eggs as a prominent protein in many meals; no meat, poultry, fish or seafood. Non-vegetarian = meat, poultry, seafood, pork, beef, ham, sausages and every other non-vegetarian food is allowed, along with vegetarian food. Vegan = no animal products at all (no meat, fish, eggs, dairy or honey).",
-      "Keep each tip under 12 words. In 'shopping' list at most 6 inexpensive extras that would unlock the plan; use an empty array if none are needed.",
-      'Respond with ONLY JSON in this shape: {"days":[{"day":"Day 1","meals":[{"type":"Breakfast","dish":"...","uses":"comma separated ingredients from the list","tip":"..."}]}],"shopping":["..."]}. Exactly 5 days.'
+      "Rules: vary the dishes across days, do not repeat a main dish, and respect the diet strictly. Water is always available.",
+      "Diet meanings: Vegetarian = only plant-based food (vegetables, leafy greens, roots, fruits, grains, pulses, nuts) plus dairy (milk, curd, paneer, ghee); no meat, poultry, fish, seafood or eggs. Eggetarian = vegetarian food with eggs as a prominent protein in many meals; no meat, poultry, fish or seafood. Non-vegetarian = meat, poultry, seafood, pork, beef, ham, sausages and every other non-vegetarian food is allowed, along with vegetarian food. Vegan = no animal products at all (no meat, fish, eggs, dairy or honey).",
+      STAPLES.trim()
+        ? "The person's complete list of staples at home: " + STAPLES + ". Use these freely for cooking and seasoning, but do not treat them as the main ingredients. Do NOT assume they have any other spice, sauce, oil or pantry item beyond this list and the fresh ingredients given. If a dish needs anything else, either choose a different dish or add that item to the shopping list. Never put the listed staples in the shopping list."
+        : "Beyond the fresh ingredients, assume only salt, oil and water are available.",
+      avoid.trim()
+        ? "The person wants to avoid: " + avoid + ". Never use these ingredients, and never put them in the shopping list."
+        : "Nothing specific to avoid.",
+      "Breakfast rule: whenever a Breakfast is included, it must be either a smoothie or a pudding (for example chia pudding, oats pudding, rice pudding), never a savoury dish. Alternate between smoothies and puddings and never repeat the same one. If the pantry lacks what they need, add the missing items to the shopping list.",
+      "Keep each tip under 12 words. In 'shopping' list at most 8 inexpensive extras that would unlock the plan; use an empty array if none are needed.",
+      'Respond with ONLY JSON in this shape: {"days":[{"day":"Day 1","meals":[{"type":"Breakfast","dish":"...","uses":"comma separated ingredients from the lists","tip":"..."}]}],"shopping":["..."]}. Exactly 5 days.'
     ].join("\n");
 
     const models = ["gemini-3.1-flash-lite-preview", "gemini-3.8-flash"];
