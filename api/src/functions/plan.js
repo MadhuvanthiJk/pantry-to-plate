@@ -35,6 +35,7 @@ app.http("plan", {
         : "Nothing specific to avoid.",
       "Breakfast rule: whenever a Breakfast is included, it must be either a smoothie or a pudding (for example chia pudding, oats pudding, rice pudding), never a savoury dish. Alternate between smoothies and puddings and never repeat the same one. If the pantry lacks what they need, add the missing items to the shopping list.",
       "Keep each tip under 12 words. In 'shopping' list at most 8 inexpensive extras that would unlock the plan; use an empty array if none are needed.",
+      "For each meal also give a 'benefit': one short, modest, factual line (under 14 words) about a nutritional plus of the dish, such as fibre, protein, iron or vitamin C. No medical claims and no promises about weight loss or curing anything.",
       'Respond with ONLY JSON in this shape: {"days":[{"day":"Day 1","meals":[{"type":"Breakfast","dish":"...","uses":"comma separated ingredients from the lists","tip":"..."}]}],"shopping":["..."]}. Exactly 5 days.'
     ].join("\n");
 
