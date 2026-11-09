@@ -6,9 +6,9 @@
 <title>Pantry to Plate: 5-Day Meal Planner</title>
 <style>
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
---bg:#fbf7f0;--card:#ffffff;--ink:#2b2420;--muted:#7a6e64;--accent:#c2562b;--accent-ink:#ffffff;--line:#eadfce;--soft:#f5ecdc}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1c1815;--card:#26211d;--ink:#f1e9de;--muted:#a79a8c;--accent:#e07a4f;--accent-ink:#1c1815;--line:#3a322b;--soft:#2f2823}}
-:root[data-theme="dark"]{--bg:#1c1815;--card:#26211d;--ink:#f1e9de;--muted:#a79a8c;--accent:#e07a4f;--accent-ink:#1c1815;--line:#3a322b;--soft:#2f2823}
+--bg:#f5f4e8;--card:#fdfdf7;--ink:#2b2431;--muted:#6f6870;--accent:#742f60;--accent-ink:#ffffff;--line:#d8d9b8;--soft:#e4e5c6}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1c1b13;--card:#26251b;--ink:#f3f0df;--muted:#aaa793;--accent:#d88bc0;--accent-ink:#1c1b13;--line:#47452f;--soft:#34331f}}
+:root[data-theme="dark"]{--bg:#1c1b13;--card:#26251b;--ink:#f3f0df;--muted:#aaa793;--accent:#d88bc0;--accent-ink:#1c1b13;--line:#47452f;--soft:#34331f}
 *,*::before,*::after{box-sizing:border-box}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
 body{margin:0;background:var(--bg);color:var(--ink);font-family:Georgia,"Times New Roman",serif;line-height:1.5}
@@ -44,11 +44,11 @@ button.ghost{background:var(--soft);color:var(--ink);border:1px solid var(--line
 <p class="sub">Hand over your ingredients, and a five-day menu shall be conjured. No food was harmed in the making of this plan.</p>
 
 <div class="panel">
-<label for="ing">What is in your kitchen?</label>
-<textarea id="ing" placeholder="rice, toor dal, onions, tomatoes, potatoes, eggs, curd, spinach, paneer, atta, chilli, curry leaves"></textarea>
+<label for="ing">Today’s ingredients (vegetables, meat, eggs, anything fresh)</label>
+<textarea id="ing" placeholder="spinach, paneer, tomatoes, potatoes, eggs, tofu, pumpkin"></textarea>
 <label for="avoid" style="margin-top:14px">Anything to avoid?</label>
-<input id="avoid" type="text" maxlength="200" placeholder="e.g. peanuts, mushrooms, no dairy">
-<div class="note" style="margin-top:6px">Allergens remainder .</div>
+<input id="avoid" type="text" maxlength="200" placeholder="e.g. beef, pork, peanuts, mushrooms">
+<div class="note" style="margin-top:6px">Allergens remainder!.</div>
 <div class="row">
 <div><label for="diet">Diet</label>
 <select id="diet"><option>Non-vegetarian</option><option>Vegetarian</option><option>Eggetarian</option><option>Vegan</option></select></div>
@@ -106,21 +106,27 @@ function render(plan) {
   if (plan.shopping && plan.shopping.length) {
     const s = el("section", "shop");
     s.append(el("h2", null, "Small shopping list"));
-    s.append(el("div", "note", "Staples worth grabbing so the plan actually works: " + plan.shopping.join(", ") + "."));
+    s.append(el("div", "note", "Worth grabbing so the plan actually works: " + plan.shopping.join(", ") + "."));
     out.append(s);
   }
 }
 
 btn.onclick = async () => {
   const ingredients = $("ing").value.trim();
-  if (!ingredients) { statusEl.className = "err"; statusEl.textContent = "An empty pantry, darling? Even I cannot cook with nothing."; return; }
+  if (!ingredients) { statusEl.className = "err"; statusEl.textContent = "An empty pantry, darling?"; return; }
   statusEl.className = ""; statusEl.textContent = "Consulting the kitchen oracle...";
   out.replaceChildren(); btn.disabled = true;
   try {
     const res = await fetch("/api/plan", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ingredients, diet: $("diet").value, avoid: $("avoid").value, cuisine: $("cuisine").value, meals: $("meals").value })
+      body: JSON.stringify({
+        ingredients,
+        avoid: $("avoid").value,
+        diet: $("diet").value,
+        cuisine: $("cuisine").value,
+        meals: $("meals").value
+      })
     });
     if (!res.ok) throw new Error("http " + res.status);
     const plan = await res.json();
@@ -128,7 +134,7 @@ btn.onclick = async () => {
     statusEl.textContent = ""; render(plan);
   } catch (e) {
     statusEl.className = "err";
-    statusEl.textContent = "The plan fell apart like a bad souffl\u00e9. Please try once more.";
+    statusEl.textContent = "The plan fell apart like a bad rasam. Please try once more.";
   } finally { btn.disabled = false; }
 };
 </script>
