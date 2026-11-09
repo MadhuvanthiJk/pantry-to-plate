@@ -2,7 +2,7 @@ const { app } = require("@azure/functions");
 
 // EDIT THIS LIST: your own staples (always at home), separated by commas.
 // The planner will use only these plus the fresh ingredients typed on the page.
-const STAPLES = "salt, olive oil, sesame oil, coconut oil, groundnut oil, cumin powder, kasuri methi, white sesame seeds, cornflour, chilli flakes, mixed herbs, dried red chillies, turmeric, red chilli powder, coriander powder, cumin seeds, mustard seeds, black pepper, ginger-garlic paste, chilli oil, milk, butter, cheese, tamarind, wheat flour, ghee, garam masala";
+const STAPLES = "salt, olive oil, cloves, bay leaf, urad dal, elachi, sesame oil, star anise, cinnamon, coconut oil, groundnut oil, cumin powder, kasuri methi, white sesame seeds, cornflour, chilli flakes, mixed herbs, dried red chillies, turmeric, red chilli powder, coriander powder, cumin seeds, mustard seeds, black pepper, ginger-garlic paste, chilli oil, milk, butter, cheese, tamarind, wheat flour, ghee, garam masala";
 
 app.http("plan", {
   methods: ["POST"],
