@@ -2,7 +2,10 @@ const { app } = require("@azure/functions");
 
 // EDIT THIS LIST: your own staples (always at home), separated by commas.
 // The planner will use only these plus the fresh ingredients typed on the page.
-const STAPLES = "salt, olive oil, cloves, bay leaf, urad dal, elachi, sesame oil, star anise, cinnamon, coconut oil, white sesame seeds, black sesame seeds, groundnut oil, cumin powder, kasuri methi, white sesame seeds, cornflour, chilli flakes, mixed herbs, dried red chillies, turmeric, red chilli powder, coriander powder, cumin seeds, mustard seeds, black pepper, ginger-garlic paste, chilli oil, milk, butter, cheese, tamarind, wheat flour, ghee, garam masala";
+const STAPLES = "salt, olive oil, cloves, bay leaf, urad dal, elachi, sesame oil, star anise, cinnamon, coconut oil, white sesame seeds, black sesame seeds, groundnut oil, cumin powder, kasuri methi, cornflour, chilli flakes, mixed herbs, dried red chillies, turmeric, red chilli powder, coriander powder, cumin seeds, mustard seeds, black pepper, ginger-garlic paste, chilli oil, milk, butter, cheese, tamarind, wheat flour, ghee, garam masala";
+
+// EDIT THIS LIST: how you actually cook (equipment you own), separated by commas.
+const COOKING = "induction stove, kadai, tawa, steamer, mixer grinder";
 
 app.http("plan", {
   methods: ["POST"],
@@ -28,16 +31,17 @@ app.http("plan", {
       "Rules: vary the dishes across days, do not repeat a main dish, and respect the diet strictly. Water is always available.",
       "Diet meanings: Vegetarian = only plant-based food (vegetables, leafy greens, roots, fruits, grains, pulses, nuts) plus dairy (milk, curd, paneer, ghee); no meat, poultry, fish, seafood or eggs. Eggetarian = vegetarian food with eggs as a prominent protein in many meals; no meat, poultry, fish or seafood. Non-vegetarian = meat, poultry, seafood, pork, beef, ham, sausages and every other non-vegetarian food is allowed, along with vegetarian food. Vegan = no animal products at all (no meat, fish, eggs, dairy or honey).",
       STAPLES.trim()
-        ? "The person's complete list of staples at home: " + STAPLES + ". Use these freely for cooking and seasoning, but do not treat them as the main ingredients. Do NOT assume they have any other spice, sauce, oil or pantry item beyond this list and the fresh ingredients given. If a dish needs anything else, either choose a different dish or add that item to the shopping list. Never put the listed staples in the shopping list."
+        ? "The person's complete list of staples at home: " + STAPLES + ". Use these freely for cooking and seasoning, but do not treat them as the main ingredients. Do NOT assume they have any other spice, sauce, oil or pantry item beyond this list and the fresh ingredients given. If a dish needs anything else, either choose a different dish or add that item to the shopping list. Never put the listed staples in the shopping list. The diet always wins over this list: if a staple does not fit the chosen diet (for example milk, butter, cheese or ghee for Vegan), do not use it."
         : "Beyond the fresh ingredients, assume only salt, oil and water are available.",
       avoid.trim()
         ? "The person wants to avoid: " + avoid + ". Never use these ingredients, and never put them in the shopping list."
         : "Nothing specific to avoid.",
+      "Cooking style: the person cooks Indian home-style. Allowed equipment: " + COOKING + ". Do NOT suggest baking, oven roasting, grilling, air frying or any dish that needs an oven or air fryer. Prefer familiar stovetop, pressure-cooker and tawa methods, and keep every recipe realistic for an Indian home kitchen.",
       "Breakfast rule: whenever a Breakfast is included, it must be either a smoothie or a pudding (for example chia pudding, oats pudding, rice pudding), never a savoury dish. Alternate between smoothies and puddings and never repeat the same one. If the pantry lacks what they need, add the missing items to the shopping list.",
       "Keep each tip under 12 words. In 'shopping' list at most 8 inexpensive extras that would unlock the plan; use an empty array if none are needed.",
       "For each meal also give a 'benefit': one short, modest, factual line (under 14 words) about a nutritional plus of the dish, such as fibre, protein, iron or vitamin C. No medical claims and no promises about weight loss or curing anything.",
       "For each meal also give 'avoid_with': a short line (under 16 words) naming something not to have at the same meal, but ONLY when there is a well-established nutrition reason, such as tea, coffee or calcium-rich dairy at the same meal as iron-rich foods, which can reduce iron absorption. Use cautious wording like 'can reduce', never absolutes. If there is no well-established interaction, use an empty string. Never invent folk food-combining rules and make no medical claims.",
-      'Respond with ONLY JSON in this shape: {"days":[{"day":"Day 1","meals":[{"type":"Breakfast","dish":"...","uses":"comma separated ingredients from the lists","tip":"..."}]}],"shopping":["..."]}. Exactly 5 days.'
+      'Respond with ONLY JSON in this shape: {"days":[{"day":"Day 1","meals":[{"type":"Breakfast","dish":"...","uses":"comma separated ingredients from the lists","tip":"...","benefit":"...","avoid_with":"..."}]}],"shopping":["..."]}. Exactly 5 days.'
     ].join("\n");
 
     const models = ["gemini-3.1-flash-lite-preview", "gemini-3.8-flash"];
